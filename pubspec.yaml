@@ -45,13 +45,17 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_launcher_icons: ^0.13.1  
+  flutter_launcher_icons: ^0.14.4
   flutter_lints: ^3.0.2
 
 flutter_launcher_icons:
   android: true
   ios: false   # ถ้าไม่ใช้ iOS
-  image_path: "assets/icon/app_icon.png"    
+  image_path: "assets/images/app_designer.png"
+  min_sdk_android: 21
+
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/app_designer.png"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -73,6 +77,9 @@ flutter:
   assets:
     - assets/videos/BGC_final_web.mp4
     - assets/images/glass_packaging.png
+    - assets\images\app_designer.png
+
+    
 
   # To add assets to your application, add an assets section, like this:
   # assets:
