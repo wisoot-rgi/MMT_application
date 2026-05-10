@@ -75,7 +75,7 @@ class _InputThicknessPageState extends State<InputThicknessPage> {
     // ✅ ใช้แบบนี้แทน
     double patchThkVal = prefs.getDouble("patchThk") ?? 75;
     double airGapVal = prefs.getDouble("airGap") ?? 1;
-    double kTankVal = prefs.getDouble("kTank") ?? 5;
+    double kTankVal = prefs.getDouble("kTank") ?? 2.8;
     double kPatchVal = prefs.getDouble("kPatch") ?? 2.5;
 
     try {
@@ -219,16 +219,18 @@ class _InputThicknessPageState extends State<InputThicknessPage> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ThicknessConstPage(),
-                ),
+              final navigator = Navigator.of(context);
+
+              final result = await navigator.push(
+                MaterialPageRoute(builder: (_) => const ThicknessConstPage()),
               );
 
-              // ✅ กลับมาแล้ว reload ค่าใหม่
-              await loadConstants();
-              tryAutoCalculate(); // ✅ auto calculate
+              if (!mounted) return;
+
+              if (result == true) {
+                await loadConstants();
+                tryAutoCalculate();
+              }
             },
           ),
           //-----------------------------
@@ -588,7 +590,7 @@ class _InputThicknessPageState extends State<InputThicknessPage> {
 
       // Radiation conductivity
       const sigma = 5.67e-8;
-      kRad = 4 * sigma * lGap * tm * tm * tm*0; //cancelled K rad
+      kRad = 4 * sigma * lGap * tm * tm * tm * 0; //cancelled K rad
 
       // Total air-gap conductivity
       kAirGap = kAir + kRad;

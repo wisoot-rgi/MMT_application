@@ -1,6 +1,5 @@
-import 'dart:io'; // 👈 สำคัญมาก
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ThicknessConstPage extends StatefulWidget {
   const ThicknessConstPage({super.key});
@@ -23,79 +22,57 @@ class _ThicknessConstPageState extends State<ThicknessConstPage> {
   String tankMaterial = "Fused Cast";
   String patchMaterial = "Chrome";
 
-  //---------------------------------
-  // 👇 วางตรงนี้ได้เลย
-  Future<void> saveToFile() async {
-    final dir = await getApplicationDocumentsDirectory();
+  // ==========================
+  // SAVE
+  // ==========================
+  Future<void> saveToStorage() async {
+    final prefs = await SharedPreferences.getInstance();
 
-    final folder = Directory('${dir.path}/parameter');
-    if (!await folder.exists()) {
-      await folder.create(recursive: true);
-    }
+    await prefs.setDouble("patchThk", double.tryParse(patchThk.text) ?? 75);
 
-    final file = File('${folder.path}/cal_thickness_const.txt');
+    await prefs.setDouble("airGap", double.tryParse(airGap.text) ?? 1);
 
-    String data =
-        '''
-patchThk=${patchThk.text}
-airGap=${airGap.text}
-kTank=${kTank.text}
-kPatch=${kPatch.text}
-kAir=${kAir.text}
-''';
+    await prefs.setDouble("kTank", double.tryParse(kTank.text) ?? 2.8);
 
-    await file.writeAsString(data);
-    debugPrint("Saved file at: ${file.path}");
+    await prefs.setDouble("kPatch", double.tryParse(kPatch.text) ?? 2.5);
+
+    await prefs.setDouble("kAir", double.tryParse(kAir.text) ?? 0.03);
+
+    await prefs.setString("tankMaterial", tankMaterial);
+    await prefs.setString("patchMaterial", patchMaterial);
   }
 
-  //---------------------------------
-  Future<void> loadFromFile() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/parameter/cal_thickness_const.txt');
+  // ==========================
+  // LOAD
+  // ==========================
+  Future<void> loadFromStorage() async {
+    final prefs = await SharedPreferences.getInstance();
 
-    if (await file.exists()) {
-      final content = await file.readAsString();
+    patchThk.text = (prefs.getDouble("patchThk") ?? 75).toString();
 
-      final lines = content.split('\n');
+    airGap.text = (prefs.getDouble("airGap") ?? 1).toString();
 
-      for (var line in lines) {
-        if (line.contains('=')) {
-          final parts = line.split('=');
-          final key = parts[0].trim();
-          final value = parts[1].trim();
+    kTank.text = (prefs.getDouble("kTank") ?? 2.8).toString();
 
-          switch (key) {
-            case 'patchThk':
-              patchThk.text = value;
-              break;
-            case 'airGap':
-              airGap.text = value;
-              break;
-            case 'kTank':
-              kTank.text = value;
-              break;
-            case 'kPatch':
-              kPatch.text = value;
-              break;
-            case 'kAir':
-              kAir.text = value;
-              break;
-          }
-        }
-      }
+    kPatch.text = (prefs.getDouble("kPatch") ?? 2.5).toString();
 
+    kAir.text = (prefs.getDouble("kAir") ?? 0.03).toString();
+
+    tankMaterial = prefs.getString("tankMaterial") ?? "Fused Cast";
+
+    patchMaterial = prefs.getString("patchMaterial") ?? "Chrome";
+
+    if (mounted) {
       setState(() {});
     }
   }
 
-  //---------------------------------
   @override
   void initState() {
     super.initState();
-    loadFromFile(); // ✅ โหลดทันที
+    loadFromStorage();
   }
 
-  //---------------------------------
   @override
   Widget build(BuildContext context) {
     double w = double.tryParse(width.text) ?? 0;
@@ -110,11 +87,13 @@ kAir=${kAir.text}
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: () async {
-              await saveToFile();
-              
-              if (!context.mounted) return; // ✅ แก้ warning ตรงจุด
+              final navigator = Navigator.of(context);
 
-              Navigator.pop(context);
+              await saveToStorage();
+
+              if (!mounted) return;
+
+              navigator.pop(true);
             },
           ),
         ],
@@ -124,11 +103,11 @@ kAir=${kAir.text}
         children: [
           buildTitle("1. Material"),
           buildCard([
-            buildDropdown("Tank", [
+            buildDropdown("Tank", tankMaterial, [
               "Fused Cast",
               "AZS",
             ], (v) => tankMaterial = v!),
-            buildDropdown("Patching", [
+            buildDropdown("Patching", patchMaterial, [
               "Chrome",
               "AZS",
             ], (v) => patchMaterial = v!),
@@ -200,13 +179,14 @@ kAir=${kAir.text}
 
   Widget buildDropdown(
     String label,
+    String selectedValue,
     List<String> items,
     Function(String?) onChanged,
   ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: DropdownButtonFormField<String>(
-        initialValue: items.first,
+        initialValue: selectedValue,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -214,7 +194,11 @@ kAir=${kAir.text}
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(e)))
             .toList(),
-        onChanged: onChanged,
+        onChanged: (v) {
+          setState(() {
+            onChanged(v);
+          });
+        },
       ),
     );
   }
